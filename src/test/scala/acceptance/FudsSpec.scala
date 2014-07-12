@@ -5,7 +5,7 @@ import fuds.Server
 import io.shaka.http.Http.http
 import io.shaka.http.Request.{PUT,GET}
 import io.shaka.http.Response
-import io.shaka.http.Status.{FORBIDDEN, OK}
+import io.shaka.http.Status.{FORBIDDEN, OK, BAD_REQUEST}
 import fuds.restriction.{PathRegexWhiteList, IsCsv}
 
 class FudsSpec extends Spec with BeforeAndAfterEach {
@@ -40,8 +40,11 @@ class FudsSpec extends Spec with BeforeAndAfterEach {
       assert((response.status, body(response)) === (OK, Some("foo,bar\n1,2")))
     }
 
-    def `reject dangerous paths`(){
-      pending
+    def `reject paths with any "." or ".." parts`(){
+      assert(http(PUT(base + "/../fear.csv").entity("foo,bar\n1,2\n")).status === BAD_REQUEST) // This one is actually rejected by Jetty
+      assert(http(PUT(base + "/fear/../fears.csv").entity("foo,bar\n1,2\n")).status === BAD_REQUEST)
+      assert(http(PUT(base + "/.").entity("foo,bar\n1,2\n")).status === BAD_REQUEST)
+      assert(http(PUT(base + "/./fear.csv").entity("foo,bar\n1,2\n")).status === BAD_REQUEST)
     }
 
     def `fail with appropriate status codes`(){
@@ -54,7 +57,7 @@ class FudsSpec extends Spec with BeforeAndAfterEach {
 
     def `restrict uploads to proper csvs where configured that way`(){
       assert(http(PUT(base + "/fear.csv").entity("foo\n1,2\n")).status === FORBIDDEN)
-    }
+   }
   }
 
   private def body(response: Response): Option[String] = response.entity.map(_.toString().trim)
