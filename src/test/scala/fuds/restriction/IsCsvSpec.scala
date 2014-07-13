@@ -18,6 +18,10 @@ class IsCsvSpec extends Spec {
       assert(IsCsv(bytes("\nfoo")) === false)
       assert(IsCsv(bytes("foo\none, two")) === false)
     }
+
+    def `reject files with quotes (as we are not using a proper csv parser)`(){
+      assert(IsCsv(bytes(""""foo","bar"""")) === false)
+    }
   }
 
   object `numberOfElements must` {
