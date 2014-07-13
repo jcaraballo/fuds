@@ -2,7 +2,7 @@ package fuds.restriction
 
 
 object WhiteListParser {
-  def parse(lines: Seq[String]): WhiteList = {
+  def parse(lines: List[String]): WhiteList = {
     val whiteLists = lines.map(_.trim).filterNot(_.isEmpty).map { line =>
       val positionOfFirstSpace = line.indexOf(' ')
       val restriction = RestrictionParser.parse(line.substring(0, positionOfFirstSpace))

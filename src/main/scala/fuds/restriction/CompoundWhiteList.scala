@@ -1,7 +1,7 @@
 package fuds.restriction
 
 object CompoundWhiteList {
-  def apply(wls: Seq[WhiteList]): WhiteList = wls match {
+  def apply(wls: List[WhiteList]): WhiteList = wls match {
     case head :: Nil => head
     case head :: tail =>
       new WhiteList {

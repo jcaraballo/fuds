@@ -82,7 +82,7 @@ class Server(val specifiedPort: Option[Int], whiteList: WhiteList) {
 object Server {
   def main(args: Array[String]) {
     val whiteList: WhiteList =
-      if(args.size>0) WhiteListParser.parse(scala.io.Source.fromFile(args(0)).getLines().toSeq)
+      if(args.size>0) WhiteListParser.parse(scala.io.Source.fromFile(args(0)).getLines().toList)
       else new PathRegexWhiteList(".*".r, IsCsv)
     new Server(Some(8080), whiteList).start().join()
   }
