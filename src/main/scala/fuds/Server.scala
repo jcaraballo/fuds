@@ -13,7 +13,9 @@ class Server(val specifiedPort: Option[Int], whiteList: WhiteList) {
   var files = Map[String, Array[Byte]]()
   var httpServer: Http = _
 
-  def start(): Server = {
+  start()
+
+  private def start() {
     val plan = unfiltered.filter.Planify {
       case req @ PUT(Path(resourceLocator)) =>
         try {
@@ -56,7 +58,6 @@ class Server(val specifiedPort: Option[Int], whiteList: WhiteList) {
     }).filter(plan).start()
 
     println("Server started on port " + port)
-    this
   }
 
   private def partsToDirectoryPath(parts: Vector[String]): Option[j7file.Path] =
@@ -76,14 +77,5 @@ class Server(val specifiedPort: Option[Int], whiteList: WhiteList) {
 
   def join() {
     httpServer.join()
-  }
-}
-
-object Server {
-  def main(args: Array[String]) {
-    val whiteList: WhiteList =
-      if(args.size>0) WhiteListParser.parse(scala.io.Source.fromFile(args(0)).getLines().toList)
-      else new PathRegexWhiteList(".*".r, IsCsv)
-    new Server(Some(8080), whiteList).start().join()
   }
 }

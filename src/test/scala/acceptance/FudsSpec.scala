@@ -1,12 +1,14 @@
 package acceptance
 
 import org.scalatest.{BeforeAndAfterEach, Spec}
-import fuds.Server
+import fuds.{Fuds, Server}
 import io.shaka.http.Http.http
 import io.shaka.http.Request.{PUT,GET}
 import io.shaka.http.Response
 import io.shaka.http.Status.{FORBIDDEN, NOT_FOUND, OK, BAD_REQUEST}
 import fuds.restriction.{PathRegexWhiteList, IsCsv}
+import java.io.ByteArrayInputStream
+import java.nio.charset.StandardCharsets
 
 class FudsSpec extends Spec with BeforeAndAfterEach {
 
@@ -26,8 +28,8 @@ class FudsSpec extends Spec with BeforeAndAfterEach {
     def `enable users to retrieve files previously uploaded even if the server has been down in between`() {
       assert(okBody(http(PUT(base + "/fear.csv").entity("foo,bar\n1,2\n"))) === "/fear.csv")
 
-      server.stop()
-      server = csvFuds().start()
+      fuds.stop()
+      fuds = csvFuds()
 
       val response = http(GET(base + "/fear.csv"))
       assert((response.status, body(response)) === (OK, Some("foo,bar\n1,2")))
@@ -72,18 +74,18 @@ class FudsSpec extends Spec with BeforeAndAfterEach {
   }
 
   override def beforeEach(){
-    server = csvFuds().start()
+    fuds = csvFuds()
   }
 
-  def csvFuds(): Server = {
-    new Server(None, new PathRegexWhiteList(".*".r, IsCsv))
+  def csvFuds(): Fuds = {
+    Fuds(new ByteArrayInputStream("IsCsv .*".getBytes(StandardCharsets.UTF_8)))
   }
 
   override def afterEach(){
-    server.stop()
+    fuds.stop()
   }
 
-  var server: Server = _
+  var fuds: Fuds = _
 
-  private def base = s"http://localhost:${server.port}"
+  private def base = s"http://localhost:${fuds.port}"
 }
