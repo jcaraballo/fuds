@@ -8,9 +8,9 @@ class PathRegexWhiteListSpec extends Spec {
       val restriction = new Restriction {
         override def apply(v1: Array[Byte]) = throw new RuntimeException("Shouldn't call this")
       }
-      val acceptStartingByA = new PathRegexWhiteList("A.*".r, restriction)
-      assert(acceptStartingByA("Anne") === restriction)
-      assert(acceptStartingByA("Bob") === Never)
+      val slashAWhiteList = new PathRegexWhiteList("/A.*".r, restriction)
+      assert(slashAWhiteList("/Anne") === restriction)
+      assert(slashAWhiteList("/Bob") === Never)
     }
   }
 }
