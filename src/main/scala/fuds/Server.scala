@@ -7,6 +7,7 @@ import java.nio.{file => j7file}
 import unfiltered.request.Path
 import scala.util.control.NonFatal
 import fuds.restriction.{PathRegexWhiteList, WhiteListParser, WhiteList, IsCsv}
+import java.nio.file.NoSuchFileException
 
 class Server(val specifiedPort: Option[Int], whiteList: WhiteList) {
   var files = Map[String, Array[Byte]]()
@@ -41,7 +42,12 @@ class Server(val specifiedPort: Option[Int], whiteList: WhiteList) {
         }
 
       case GET(Path(resourceLocator)) =>
-        ResponseBytes(j7file.Files.readAllBytes(partsToFullPath(relativeParts(resourceLocator))))
+        try {
+          ResponseBytes(j7file.Files.readAllBytes(partsToFullPath(relativeParts(resourceLocator))))
+        }
+        catch {
+          case _: NoSuchFileException => NotFound
+        }
     }
 
     httpServer = (specifiedPort match {

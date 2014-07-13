@@ -5,7 +5,7 @@ import fuds.Server
 import io.shaka.http.Http.http
 import io.shaka.http.Request.{PUT,GET}
 import io.shaka.http.Response
-import io.shaka.http.Status.{FORBIDDEN, OK, BAD_REQUEST}
+import io.shaka.http.Status.{FORBIDDEN, NOT_FOUND, OK, BAD_REQUEST}
 import fuds.restriction.{PathRegexWhiteList, IsCsv}
 
 class FudsSpec extends Spec with BeforeAndAfterEach {
@@ -45,6 +45,11 @@ class FudsSpec extends Spec with BeforeAndAfterEach {
       assert(http(PUT(base + "/fear/../fears.csv").entity("foo,bar\n1,2\n")).status === BAD_REQUEST)
       assert(http(PUT(base + "/.").entity("foo,bar\n1,2\n")).status === BAD_REQUEST)
       assert(http(PUT(base + "/./fear.csv").entity("foo,bar\n1,2\n")).status === BAD_REQUEST)
+    }
+
+    def `fail with status 404 Not found when trying to retrieve file that has never been uploaded`(){
+      assert(http(GET(base + "/does-not-exist.csv")).status === NOT_FOUND)
+      assert(http(GET(base + "/does/not/exist.csv")).status === NOT_FOUND)
     }
 
     def `fail with appropriate status codes`(){
