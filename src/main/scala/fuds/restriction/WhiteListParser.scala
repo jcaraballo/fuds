@@ -15,7 +15,9 @@ object WhiteListParser {
 }
 
 object RestrictionParser {
-  def parse(restrictionAsString: String): Restriction =
-    if (restrictionAsString == "IsCsv") IsCsv
-    else throw new IllegalArgumentException(s"Unrecognised restriction '$restrictionAsString'")
+  def parse(restrictionAsString: String): Restriction = restrictionAsString match {
+    case "IsCsv" => IsCsv
+    case "AnyContent" => AnyContent
+    case _ => throw new IllegalArgumentException(s"Unrecognised restriction '$restrictionAsString'")
+  }
 }
