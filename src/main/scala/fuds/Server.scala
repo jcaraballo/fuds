@@ -1,6 +1,6 @@
 package fuds
 
-import unfiltered.jetty.Http
+import unfiltered.jetty.{Https, Http}
 import unfiltered.request._
 import unfiltered.response._
 import java.nio.{file => j7file}
@@ -13,10 +13,11 @@ import scala.Some
 import unfiltered.response.ResponseString
 
 class Server(val maybePort: Option[Int] = None,
-             val whiteList: WhiteList) {
+             val whiteList: WhiteList,
+             val https: Boolean) {
   val port = maybePort.getOrElse(unfiltered.util.Port.any)
   var files = Map[String, Array[Byte]]()
-  var httpServer: Http = _
+  var unfilteredServer: unfiltered.jetty.Server = _
 
   start()
 
@@ -57,7 +58,9 @@ class Server(val maybePort: Option[Int] = None,
         }
     }
 
-    httpServer = unfiltered.jetty.Http(port).filter(plan).start()
+    unfilteredServer =
+      if(https) new HttpsServer(port, "127.0.0.1").filter(plan).start()
+      else unfiltered.jetty.Http(port).filter(plan).start()
 
     println("Server started on port " + port)
   }
@@ -70,10 +73,19 @@ class Server(val maybePort: Option[Int] = None,
   private def relativeParts(resourceLocator: String): Vector[String] = resourceLocator.dropWhile(_=='/').split("/").toVector
 
   def stop() {
-    httpServer.stop()
+    unfilteredServer.stop()
   }
 
   def join() {
-    httpServer.join()
+    unfilteredServer.join()
   }
+}
+
+object Server extends App {
+  new Server(Some(8443), new PathRegexWhiteList(".*".r, AnyContent), https = true)
+}
+
+class HttpsServer(port: Int, host: String) extends Https(port, host) {
+  override lazy val keyStore: String = "certs/keystore-local.jks"
+  override lazy val keyStorePassword: String = "dummypass"
 }

@@ -1,8 +1,8 @@
 package fuds
 
 package object restriction {
-  type WhiteList = (String => Restriction)
   type Restriction = (Array[Byte] => Boolean)
+  type WhiteList = (String => Restriction)
 
   object Never extends Restriction {
     override def apply(v1: Array[Byte]) = false
@@ -11,4 +11,6 @@ package object restriction {
   object AnyContent extends Restriction {
     override def apply(v1: Array[Byte]): Boolean = true
   }
+
+  object PermissiveWhiteList extends PathRegexWhiteList(".*".r, AnyContent)
 }
