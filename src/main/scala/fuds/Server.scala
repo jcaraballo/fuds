@@ -6,10 +6,15 @@ import unfiltered.response._
 import java.nio.{file => j7file}
 import unfiltered.request.Path
 import scala.util.control.NonFatal
-import fuds.restriction.{PathRegexWhiteList, WhiteListParser, WhiteList, IsCsv}
+import fuds.restriction._
 import java.nio.file.NoSuchFileException
+import unfiltered.response.ResponseBytes
+import scala.Some
+import unfiltered.response.ResponseString
 
-class Server(val specifiedPort: Option[Int], whiteList: WhiteList) {
+class Server(val maybePort: Option[Int] = None,
+             val whiteList: WhiteList) {
+  val port = maybePort.getOrElse(unfiltered.util.Port.any)
   var files = Map[String, Array[Byte]]()
   var httpServer: Http = _
 
@@ -52,10 +57,7 @@ class Server(val specifiedPort: Option[Int], whiteList: WhiteList) {
         }
     }
 
-    httpServer = (specifiedPort match {
-      case Some(p) => unfiltered.jetty.Http(p)
-      case None => unfiltered.jetty.Http.anylocal
-    }).filter(plan).start()
+    httpServer = unfiltered.jetty.Http(port).filter(plan).start()
 
     println("Server started on port " + port)
   }
@@ -66,10 +68,6 @@ class Server(val specifiedPort: Option[Int], whiteList: WhiteList) {
 
   private def partsToFullPath(parts: Vector[String]): j7file.Path = j7file.Paths.get(parts.mkString(java.io.File.separator))
   private def relativeParts(resourceLocator: String): Vector[String] = resourceLocator.dropWhile(_=='/').split("/").toVector
-
-  def port: Int = {
-    httpServer.port
-  }
 
   def stop() {
     httpServer.stop()
