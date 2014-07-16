@@ -13,6 +13,7 @@ class Fuds private (private val specifiedPort: Option[Int], private val whiteLis
   def port: Int = server.port
 }
 
+// TODO Strictly speaking all these InputStream s and File s should be closed
 object Fuds {
   def apply(specifiedPort: Option[Int], whiteList: BufferedSource, https: Boolean = false) = new Fuds(specifiedPort, WhiteListParser.parse(whiteList.getLines().toList), https)
 
