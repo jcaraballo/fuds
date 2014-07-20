@@ -2,7 +2,7 @@ package acceptance
 
 import org.scalatest.{BeforeAndAfterEach, Spec}
 import fuds.Fuds
-import io.shaka.http.Request.PUT
+import io.shaka.http.Request.{PUT, GET}
 import io.shaka.http.{TrustAllSslCertificates, Response}
 import io.shaka.http.Status.{UNAUTHORIZED, OK}
 import io.shaka.http.Http.http
@@ -21,7 +21,9 @@ class FudsAuthorisationSpec extends Spec with BeforeAndAfterEach {
       val fuds = Fuds.createFromBufferedSources(
         specifiedPort = None,
         contentWhiteList = None,
-        Some(scala.io.Source.fromInputStream(new ByteArrayInputStream("user:password".getBytes(StandardCharsets.UTF_8)))),
+        uploadsWhiteList = Some(scala.io.Source.fromInputStream(new ByteArrayInputStream(
+          "user:password".getBytes(StandardCharsets.UTF_8)
+        ))),
         https = true
       )
       val base = s"https://localhost:${fuds.port}"
@@ -64,8 +66,32 @@ class FudsAuthorisationSpec extends Spec with BeforeAndAfterEach {
       }
       finally fuds.stop()
     }
+
+    def `allow downloads regardless of the uploads white list`() {
+      val fuds = Fuds.createFromBufferedSources(
+        specifiedPort = None,
+        contentWhiteList = None,
+        uploadsWhiteList = Some(scala.io.Source.fromInputStream(new ByteArrayInputStream(
+          "user:password".getBytes(StandardCharsets.UTF_8)
+        ))),
+        https = true
+      )
+
+      val base = s"https://localhost:${fuds.port}"
+      try {
+        okBody(http(PUT(base + "/files/fear.csv").basicAuth("user", "password").entity("foo,bar\n1,2\n")))
+
+        val response = http(GET(base + "/files/fear.csv"))
+        assert((response.status, body(response)) === (OK, Some("foo,bar\n1,2")))
+      }
+      finally fuds.stop()
+    }
   }
 
+  private def okBody(response: Response): String = {
+    assert(response.status === OK)
+    response.entityAsString.trim
+  }
   private def body(response: Response): Option[String] = response.entity.map(_.toString().trim)
 }
 

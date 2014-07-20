@@ -23,9 +23,15 @@ class Server(val maybePort: Option[Int] = None,
 
   start()
 
+  object HttpMethod {
+    def unapply[T](req: HttpRequest[T]): Option[String] = Some(req.method.toUpperCase)
+  }
+
   object UploadsAuth {
     def apply[A, B](intent: Cycle.Intent[A, B]) =
       Cycle.Intent[A, B] {
+        case req @ HttpMethod(method) if method != "PUT" =>
+          Cycle.Intent.complete(intent)(req)
         case req@BasicAuth(user, pass) if uploadsWhiteList(Some(user, pass)) =>
           Cycle.Intent.complete(intent)(req)
         case req: HttpRequest[A] if req.headers("Authorization").isEmpty && uploadsWhiteList(None) =>
