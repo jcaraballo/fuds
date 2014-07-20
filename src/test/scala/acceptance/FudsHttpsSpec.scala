@@ -1,7 +1,7 @@
 package acceptance
 
 import org.scalatest.{BeforeAndAfterEach, Spec}
-import fuds.Fuds
+import fuds.{Server, Fuds}
 import io.shaka.http.Request.{PUT,GET}
 import io.shaka.http.{TrustAllSslCertificates, Response}
 import io.shaka.http.Status.OK
@@ -29,7 +29,7 @@ class FudsHttpsSpec extends Spec with BeforeAndAfterEach {
   }
 
   override def beforeEach(){
-    fuds = Fuds.startHttps(None)
+    fuds = Fuds.createFromBufferedSources(None, None, None, https = true)
     TrustAllSslCertificates
   }
 
@@ -37,7 +37,7 @@ class FudsHttpsSpec extends Spec with BeforeAndAfterEach {
     fuds.stop()
   }
 
-  var fuds: Fuds = _
+  var fuds: Server = _
 
   private def base = s"https://localhost:${fuds.port}"
 }

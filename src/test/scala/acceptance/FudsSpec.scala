@@ -77,15 +77,19 @@ class FudsSpec extends Spec with BeforeAndAfterEach {
     fuds = csvFuds()
   }
 
-  def csvFuds(): Fuds = {
-    Fuds(new ByteArrayInputStream("IsCsv .*".getBytes(StandardCharsets.UTF_8)))
+  def csvFuds(): Server = {
+    Fuds.createFromBufferedSources(
+      None,
+      Some(scala.io.Source.fromInputStream(new ByteArrayInputStream("IsCsv .*".getBytes(StandardCharsets.UTF_8)))),
+      None,
+      https = false)
   }
 
   override def afterEach(){
     fuds.stop()
   }
 
-  var fuds: Fuds = _
+  var fuds: Server = _
 
   private def base = s"http://localhost:${fuds.port}"
 }

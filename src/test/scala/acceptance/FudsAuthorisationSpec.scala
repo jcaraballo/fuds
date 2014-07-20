@@ -18,7 +18,12 @@ class FudsAuthorisationSpec extends Spec with BeforeAndAfterEach {
 
   object `Server must` {
     def `--given an uploads white list-- only allow uploads when allowed by the white list`() {
-      val fuds = Fuds.startHttps(Some(new ByteArrayInputStream("user:password".getBytes(StandardCharsets.UTF_8))))
+      val fuds = Fuds.createFromBufferedSources(
+        specifiedPort = None,
+        contentWhiteList = None,
+        Some(scala.io.Source.fromInputStream(new ByteArrayInputStream("user:password".getBytes(StandardCharsets.UTF_8)))),
+        https = true
+      )
       val base = s"https://localhost:${fuds.port}"
 
       try {
@@ -45,7 +50,13 @@ class FudsAuthorisationSpec extends Spec with BeforeAndAfterEach {
     }
 
     def `allow any uploads when there is no uploads authorisation white list`(){
-      val fuds = Fuds.startHttps(None)
+      val fuds = Fuds.createFromBufferedSources(
+        specifiedPort = None,
+        contentWhiteList = None,
+        uploadsWhiteList = None,
+        https = true
+      )
+
       val base = s"https://localhost:${fuds.port}"
       try {
         val response: Response = http(PUT(base + "/fear.csv").entity("foo,bar\n1,2\n"))
