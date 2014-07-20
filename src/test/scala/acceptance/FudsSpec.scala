@@ -54,14 +54,6 @@ class FudsSpec extends Spec with BeforeAndAfterEach {
       assert(http(GET(base + "/does/not/exist.csv")).status === NOT_FOUND)
     }
 
-    def `fail with appropriate status codes`(){
-      pending
-    }
-
-    def `limit the allowed size`(){
-      pending
-    }
-
     def `restrict uploads to proper csvs where configured that way`(){
       assert(http(PUT(base + "/fear.csv").entity("foo\n1,2\n")).status === FORBIDDEN)
    }
