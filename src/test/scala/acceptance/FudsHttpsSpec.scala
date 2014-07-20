@@ -29,7 +29,7 @@ class FudsHttpsSpec extends Spec with BeforeAndAfterEach {
   }
 
   override def beforeEach(){
-    fuds = Fuds.startHttps()
+    fuds = Fuds.startHttps(None)
     TrustAllSslCertificates
   }
 

@@ -2,40 +2,66 @@ package acceptance
 
 import org.scalatest.{BeforeAndAfterEach, Spec}
 import fuds.Fuds
-import io.shaka.http.Request.{PUT,GET}
+import io.shaka.http.Request.PUT
 import io.shaka.http.{TrustAllSslCertificates, Response}
 import io.shaka.http.Status.{UNAUTHORIZED, OK}
 import io.shaka.http.Http.http
-import fuds.restriction._
+import io.shaka.http.HttpHeader.AUTHORIZATION
 import scala.Some
+import java.io.ByteArrayInputStream
+import java.nio.charset.StandardCharsets
+import sun.misc.BASE64Encoder
+import FudsAuthorisationSpec.PimpedRequest
 
 class FudsAuthorisationSpec extends Spec with BeforeAndAfterEach {
   TrustAllSslCertificates
 
   object `Server must` {
-    def `allow uploads when allowed by the uploads authorisation white list`() {
-      val fuds = Fuds.startHttps(PermissiveAuthorisationWhiteList)
+    def `--given an uploads white list-- only allow uploads when allowed by the white list`() {
+      val fuds = Fuds.startHttps(Some(new ByteArrayInputStream("user:password".getBytes(StandardCharsets.UTF_8))))
       val base = s"https://localhost:${fuds.port}"
 
+      try {
+        val response: Response = http(
+          PUT(base + "/fear.csv")
+            .basicAuth("user", "password")
+            .entity("foo,bar\n1,2\n")
+        )
+        assert((response.status, body(response)) ===(OK, Some("/fear.csv")))
+
+        assert(http(
+          PUT(base + "/fear.csv")
+            .basicAuth("bob", "theHacker")
+            .entity("foo,bar\n1,2\n")
+        ).status === UNAUTHORIZED)
+
+        // No Auth
+        assert(http(
+          PUT(base + "/fear.csv")
+            .entity("foo,bar\n1,2\n")
+        ).status === UNAUTHORIZED)
+      }
+      finally fuds.stop()
+    }
+
+    def `allow any uploads when there is no uploads authorisation white list`(){
+      val fuds = Fuds.startHttps(None)
+      val base = s"https://localhost:${fuds.port}"
       try {
         val response: Response = http(PUT(base + "/fear.csv").entity("foo,bar\n1,2\n"))
         assert((response.status, body(response)) ===(OK, Some("/fear.csv")))
       }
       finally fuds.stop()
     }
-
-    def `not allow uploads when not allowed by the uploads authorisation white list`(){
-      val intolerant: AuthorisationWhiteList = new AuthorisationWhiteList {
-        override def apply(v1: Option[(String, String)]) = false
-      }
-      val fuds = Fuds.startHttps(uploadsWhiteList = intolerant)
-      try {
-        val response: Response = http(PUT(s"https://localhost:${fuds.port}/fear.csv").entity("foo,bar\n1,2\n"))
-        assert(response.status === UNAUTHORIZED)
-      }
-      finally fuds.stop()
-    }
   }
 
   private def body(response: Response): Option[String] = response.entity.map(_.toString().trim)
+}
+
+object FudsAuthorisationSpec {
+  implicit class PimpedRequest(val req: io.shaka.http.Request) extends AnyVal {
+    def basicAuth(user: String, password: String): io.shaka.http.Request = {
+      req.header(AUTHORIZATION, "Basic " + new BASE64Encoder().encode(s"$user:$password".getBytes))
+    }
+  }
 }

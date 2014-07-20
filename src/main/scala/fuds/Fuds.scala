@@ -30,8 +30,13 @@ object Fuds {
   def apply(port: Int, whiteListFilePath: String): Fuds = Fuds(Some(port), scala.io.Source.fromFile(whiteListFilePath))
 
   def apply(whiteListInputStream: InputStream): Fuds = Fuds(None, scala.io.Source.fromInputStream(whiteListInputStream))
-  def startHttps(uploadsWhiteList: AuthorisationWhiteList = PermissiveAuthorisationWhiteList): Fuds =
+  def startHttps(uploadsWhiteListInputStream: Option[InputStream]): Fuds = {
+    val uploadsWhiteList: AuthorisationWhiteList = uploadsWhiteListInputStream match {
+      case None => PermissiveAuthorisationWhiteList
+      case Some(is) => AuthorisationWhiteListParser.parse(scala.io.Source.fromInputStream(is).getLines().toList)
+    }
     new Fuds(None, PermissiveContentWhiteList, uploadsWhiteList, https = true)
+  }
 
   def main(args: Array[String]) {
     if(args.size==0) Fuds(8080, ClassLoader.getSystemResourceAsStream("default.white_list"))
