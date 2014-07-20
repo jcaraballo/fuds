@@ -6,7 +6,7 @@ import io.shaka.http.Http.http
 import io.shaka.http.Request.{PUT,GET}
 import io.shaka.http.Response
 import io.shaka.http.Status.{FORBIDDEN, NOT_FOUND, OK, BAD_REQUEST}
-import fuds.restriction.{PathRegexWhiteList, IsCsv}
+import fuds.restriction.{PathRegexContentWhiteList, IsCsv}
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
 

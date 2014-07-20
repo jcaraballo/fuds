@@ -11,9 +11,11 @@ import java.nio.file.NoSuchFileException
 import unfiltered.response.ResponseBytes
 import scala.Some
 import unfiltered.response.ResponseString
+import unfiltered.Cycle
 
 class Server(val maybePort: Option[Int] = None,
-             val whiteList: WhiteList,
+             val contentWhiteList: ContentWhiteList,
+             val uploadsWhiteList: AuthorisationWhiteList,
              val https: Boolean) {
   val port = maybePort.getOrElse(unfiltered.util.Port.any)
   var files = Map[String, Array[Byte]]()
@@ -21,41 +23,56 @@ class Server(val maybePort: Option[Int] = None,
 
   start()
 
+  object UploadsAuth {
+    def apply[A, B](intent: Cycle.Intent[A, B]) =
+      Cycle.Intent[A, B] {
+        case req@BasicAuth(user, pass) if uploadsWhiteList(Some(user, pass)) =>
+          Cycle.Intent.complete(intent)(req)
+        case req: HttpRequest[A] if req.headers("Authorization").isEmpty && uploadsWhiteList(None) =>
+          Cycle.Intent.complete(intent)(req)
+        case _ =>
+          // We could give the path regex here, but I'm not sure it would be a good idea
+          Unauthorized ~> WWWAuthenticate( """Basic realm="/"""")
+      }
+  }
+
   private def start() {
-    val plan = unfiltered.filter.Planify {
-      case req @ PUT(Path(resourceLocator)) =>
-        try {
-          val parts: Vector[String] = relativeParts(resourceLocator)
+    val plan = new unfiltered.filter.Plan {
+      def intent = UploadsAuth {
+        case req @ PUT(Path(resourceLocator)) =>
+          try {
+            val parts: Vector[String] = relativeParts(resourceLocator)
 
-          if(parts.contains(".") || parts.contains("..")) BadRequest
-          else {
-            for (d <- partsToDirectoryPath(parts)) {
-              if (!d.toFile.exists()) {
-                val succeeded = d.toFile.mkdirs()
-                if (!succeeded)
-                  throw new RuntimeException(s"Failed to create directory $d")
+            if(parts.contains(".") || parts.contains("..")) BadRequest
+            else {
+              for (d <- partsToDirectoryPath(parts)) {
+                if (!d.toFile.exists()) {
+                  val succeeded = d.toFile.mkdirs()
+                  if (!succeeded)
+                    throw new RuntimeException(s"Failed to create directory $d")
+                }
               }
+
+              val resourceContent: Array[Byte] = Body.bytes(req)
+              val canonicalResourceLocator = "/" + parts.mkString("/")
+
+              if (contentWhiteList(canonicalResourceLocator)(resourceContent)) {
+                j7file.Files.write(partsToFullPath(parts), resourceContent)
+                ResponseString(canonicalResourceLocator)
+              } else Forbidden
             }
-
-            val resourceContent: Array[Byte] = Body.bytes(req)
-            val canonicalResourceLocator = "/" + parts.mkString("/")
-
-            if (whiteList(canonicalResourceLocator)(resourceContent)) {
-              j7file.Files.write(partsToFullPath(parts), resourceContent)
-              ResponseString(canonicalResourceLocator)
-            } else Forbidden
+          } catch {
+            case NonFatal(e) => e.printStackTrace() ; throw e
           }
-        } catch {
-          case NonFatal(e) => e.printStackTrace() ; throw e
-        }
 
-      case GET(Path(resourceLocator)) =>
-        try {
-          ResponseBytes(j7file.Files.readAllBytes(partsToFullPath(relativeParts(resourceLocator))))
-        }
-        catch {
-          case _: NoSuchFileException => NotFound
-        }
+        case GET(Path(resourceLocator)) =>
+          try {
+            ResponseBytes(j7file.Files.readAllBytes(partsToFullPath(relativeParts(resourceLocator))))
+          }
+          catch {
+            case _: NoSuchFileException => NotFound
+          }
+      }
     }
 
     unfilteredServer =
@@ -79,10 +96,6 @@ class Server(val maybePort: Option[Int] = None,
   def join() {
     unfilteredServer.join()
   }
-}
-
-object Server extends App {
-  new Server(Some(8443), new PathRegexWhiteList(".*".r, AnyContent), https = true)
 }
 
 class HttpsServer(port: Int, host: String) extends Https(port, host) {

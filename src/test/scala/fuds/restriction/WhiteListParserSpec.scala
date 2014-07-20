@@ -8,11 +8,11 @@ class WhiteListParserSpec extends Spec {
     def `understand <restriction> <regex> as paths matching the regex must submit to the restriction`(){
       val whiteList = WhiteListParser.parse(List("IsCsv a.*"))
       assert(whiteList("almond").getClass === IsCsv.getClass)
-      assert(whiteList("banana").getClass === Never.getClass)
+      assert(whiteList("banana").getClass === NoContent.getClass)
     }
 
     def `ignore spaces on the sides`(){
-      val actual = WhiteListParser.parse(List("  IsCsv a.*  ")).asInstanceOf[PathRegexWhiteList]
+      val actual = WhiteListParser.parse(List("  IsCsv a.*  ")).asInstanceOf[PathRegexContentWhiteList]
       assert((actual.TheRegex.toString(), actual.restriction) === ("a.*", IsCsv))
     }
 
