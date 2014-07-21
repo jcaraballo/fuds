@@ -1,7 +1,7 @@
 package acceptance
 
 import org.scalatest.{BeforeAndAfterEach, Spec}
-import fuds.Fuds
+import fuds.{Server, Fuds}
 import io.shaka.http.Request.{PUT, GET}
 import io.shaka.http.{TrustAllSslCertificates, Response}
 import io.shaka.http.Status.{UNAUTHORIZED, OK}
@@ -18,14 +18,7 @@ class FudsAuthorisationSpec extends Spec with BeforeAndAfterEach {
 
   object `Server must` {
     def `--given an uploads white list-- only allow uploads when allowed by the white list`() {
-      val fuds = Fuds.createFromBufferedSources(
-        specifiedPort = None,
-        contentWhiteList = None,
-        uploadsWhiteList = Some(scala.io.Source.fromInputStream(new ByteArrayInputStream(
-          "user:password".getBytes(StandardCharsets.UTF_8)
-        ))),
-        https = true
-      )
+      val fuds = fudsForUploadWhiteList(Some("user:password"))
       val base = s"https://localhost:${fuds.port}"
 
       try {
@@ -52,12 +45,7 @@ class FudsAuthorisationSpec extends Spec with BeforeAndAfterEach {
     }
 
     def `allow any uploads when there is no uploads authorisation white list`(){
-      val fuds = Fuds.createFromBufferedSources(
-        specifiedPort = None,
-        contentWhiteList = None,
-        uploadsWhiteList = None,
-        https = true
-      )
+      val fuds = fudsForUploadWhiteList(None)
 
       val base = s"https://localhost:${fuds.port}"
       try {
@@ -68,14 +56,7 @@ class FudsAuthorisationSpec extends Spec with BeforeAndAfterEach {
     }
 
     def `allow downloads regardless of the uploads white list`() {
-      val fuds = Fuds.createFromBufferedSources(
-        specifiedPort = None,
-        contentWhiteList = None,
-        uploadsWhiteList = Some(scala.io.Source.fromInputStream(new ByteArrayInputStream(
-          "user:password".getBytes(StandardCharsets.UTF_8)
-        ))),
-        https = true
-      )
+      val fuds = fudsForUploadWhiteList(Some("user:password"))
 
       val base = s"https://localhost:${fuds.port}"
       try {
@@ -93,6 +74,19 @@ class FudsAuthorisationSpec extends Spec with BeforeAndAfterEach {
     response.entityAsString.trim
   }
   private def body(response: Response): Option[String] = response.entity.map(_.toString().trim)
+
+  private def fudsForUploadWhiteList(uploadsWhiteListFileContent: Option[String]): Server =
+    Fuds.createFromBufferedSources(
+      specifiedPort = None,
+      contentWhiteList = None,
+      uploadsWhiteList = uploadsWhiteListFileContent.map { c =>
+        scala.io.Source.fromInputStream(new ByteArrayInputStream(
+          c.getBytes(StandardCharsets.UTF_8)
+        ))
+      },
+      https = true,
+      "target/files-" + java.util.UUID.randomUUID
+    )
 }
 
 object FudsAuthorisationSpec {

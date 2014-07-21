@@ -29,7 +29,7 @@ class FudsSpec extends Spec with BeforeAndAfterEach {
       assert(okBody(http(PUT(base + "/fear.csv").entity("foo,bar\n1,2\n"))) === "/fear.csv")
 
       fuds.stop()
-      fuds = csvFuds()
+      fuds = csvFuds(fudsDirectory)
 
       val response = http(GET(base + "/fear.csv"))
       assert((response.status, body(response)) === (OK, Some("foo,bar\n1,2")))
@@ -66,15 +66,21 @@ class FudsSpec extends Spec with BeforeAndAfterEach {
   }
 
   override def beforeEach(){
-    fuds = csvFuds()
+    fudsDirectory = generateFudsDirectory()
+    fuds = csvFuds(fudsDirectory)
   }
 
-  def csvFuds(): Server = {
-    Fuds.createFromBufferedSources(
-      None,
-      Some(scala.io.Source.fromInputStream(new ByteArrayInputStream("IsCsv .*".getBytes(StandardCharsets.UTF_8)))),
-      None,
-      https = false)
+  def csvFuds(filesDirectory: String): Server = Fuds.createFromBufferedSources(
+    specifiedPort = None,
+    contentWhiteList = Some(scala.io.Source.fromInputStream(new ByteArrayInputStream("IsCsv .*".getBytes(StandardCharsets.UTF_8)))),
+    uploadsWhiteList = None,
+    https = false,
+    filesDirectory
+  )
+
+
+  def generateFudsDirectory(): String = {
+    "target/files-" + java.util.UUID.randomUUID
   }
 
   override def afterEach(){
@@ -82,6 +88,7 @@ class FudsSpec extends Spec with BeforeAndAfterEach {
   }
 
   var fuds: Server = _
+  var fudsDirectory: String = _
 
   private def base = s"http://localhost:${fuds.port}"
 }

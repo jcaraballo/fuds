@@ -16,10 +16,14 @@ import unfiltered.Cycle
 class Server(val maybePort: Option[Int] = None,
              val contentWhiteList: ContentWhiteList,
              val uploadsWhiteList: AuthorisationWhiteList,
-             val https: Boolean) {
+             val https: Boolean,
+             val filesDirectory: String) {
   val port = maybePort.getOrElse(unfiltered.util.Port.any)
   var files = Map[String, Array[Byte]]()
   var unfilteredServer: unfiltered.jetty.Server = _
+  val baseDirectory: String =
+    if(filesDirectory.endsWith(java.io.File.separator)) filesDirectory
+    else filesDirectory + java.io.File.separator
 
   start()
 
@@ -51,19 +55,19 @@ class Server(val maybePort: Option[Int] = None,
 
             if(parts.contains(".") || parts.contains("..")) BadRequest
             else {
-              for (d <- partsToDirectoryPath(parts)) {
-                if (!d.toFile.exists()) {
-                  val succeeded = d.toFile.mkdirs()
-                  if (!succeeded)
-                    throw new RuntimeException(s"Failed to create directory $d")
-                }
-              }
-
               val resourceContent: Array[Byte] = Body.bytes(req)
               val canonicalResourceLocator = "/" + parts.mkString("/")
 
               if (contentWhiteList(canonicalResourceLocator)(resourceContent)) {
+                val directory =  partsToDirectoryPath(parts)
+                if (directory.getNameCount>=1 && !directory.toFile.exists()) {
+                  val succeeded = directory.toFile.mkdirs()
+                  if (!succeeded)
+                    throw new RuntimeException(s"Failed to create directory $directory")
+                }
+
                 j7file.Files.write(partsToFullPath(parts), resourceContent)
+
                 ResponseString(canonicalResourceLocator)
               } else Forbidden
             }
@@ -88,11 +92,11 @@ class Server(val maybePort: Option[Int] = None,
     println("Server started on port " + port)
   }
 
-  private def partsToDirectoryPath(parts: Vector[String]): Option[j7file.Path] =
-    if (parts.size>1) Some(j7file.Paths.get(parts.dropRight(1).mkString(java.io.File.separator)))
-    else None
+  private def partsToDirectoryPath(parts: Vector[String]): j7file.Path =
+    j7file.Paths.get(baseDirectory + parts.dropRight(1).mkString(java.io.File.separator))
 
-  private def partsToFullPath(parts: Vector[String]): j7file.Path = j7file.Paths.get(parts.mkString(java.io.File.separator))
+  private def partsToFullPath(parts: Vector[String]): j7file.Path = 
+    j7file.Paths.get(baseDirectory + parts.mkString(java.io.File.separator))
   private def relativeParts(resourceLocator: String): Vector[String] = resourceLocator.dropWhile(_=='/').split("/").toVector
 
   def stop() {

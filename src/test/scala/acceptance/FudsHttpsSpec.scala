@@ -29,7 +29,14 @@ class FudsHttpsSpec extends Spec with BeforeAndAfterEach {
   }
 
   override def beforeEach(){
-    fuds = Fuds.createFromBufferedSources(None, None, None, https = true)
+    fuds = Fuds.createFromBufferedSources(
+      specifiedPort = None,
+      contentWhiteList = None,
+      uploadsWhiteList = None,
+      https = true,
+      "target/files-" + java.util.UUID.randomUUID
+    )
+
     TrustAllSslCertificates
   }
 
