@@ -1,6 +1,6 @@
 package fuds
 
-import unfiltered.jetty.{Https, Http}
+import unfiltered.jetty.Https
 import unfiltered.request._
 import unfiltered.response._
 import java.nio.{file => j7file}
@@ -12,6 +12,8 @@ import unfiltered.response.ResponseBytes
 import scala.Some
 import unfiltered.response.ResponseString
 import unfiltered.Cycle
+import org.eclipse.jetty.server.Response
+import java.util.Date
 
 class Server(val maybePort: Option[Int] = None,
              val contentWhiteList: ContentWhiteList,
@@ -46,9 +48,22 @@ class Server(val maybePort: Option[Int] = None,
       }
   }
 
+    object RequestLogging {
+      def apply[A, B](intent: Cycle.Intent[A, B]) =
+        Cycle.Intent[A, B] {
+          case req =>
+            Cycle.Intent.complete(intent)(req) ~> new ResponseFunction[Any]() {
+              override def apply[C <: Any](resp: HttpResponse[C]) = {
+                println(s"${req.remoteAddr} ${new Date()} ${req.method} ${req.uri} ${resp.underlying.asInstanceOf[Response].getStatus}")
+                resp
+              }
+            }
+        }
+    }
+
   private def start() {
     val plan = new unfiltered.filter.Plan {
-      def intent = UploadsAuth {
+      def intent = RequestLogging { UploadsAuth {
         case req @ PUT(Path(resourceLocator)) =>
           try {
             val parts: Vector[String] = relativeParts(resourceLocator)
@@ -82,7 +97,7 @@ class Server(val maybePort: Option[Int] = None,
           catch {
             case _: NoSuchFileException => NotFound
           }
-      }
+      }}
     }
 
     unfilteredServer =
