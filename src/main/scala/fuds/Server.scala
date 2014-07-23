@@ -18,7 +18,7 @@ import java.util.Date
 class Server(val maybePort: Option[Int] = None,
              val contentWhiteList: ContentWhiteList,
              val uploadsWhiteList: AuthorisationWhiteList,
-             val https: Boolean,
+             val keyStore: Option[(String, String)],
              val filesDirectory: String) {
   val port = maybePort.getOrElse(unfiltered.util.Port.any)
   var files = Map[String, Array[Byte]]()
@@ -100,9 +100,14 @@ class Server(val maybePort: Option[Int] = None,
       }}
     }
 
-    unfilteredServer =
-      if(https) new HttpsServer(port, "127.0.0.1").filter(plan).start()
-      else unfiltered.jetty.Http(port).filter(plan).start()
+    unfilteredServer = keyStore match {
+      case None => unfiltered.jetty.Http(port).filter(plan).start()
+      case Some((location, password)) =>
+        new Https(port, "127.0.0.1"){
+          override lazy val keyStore: String = location
+          override lazy val keyStorePassword: String = password
+        }.filter(plan).start()
+    }
 
     println("Server started on port " + port)
   }
@@ -121,9 +126,4 @@ class Server(val maybePort: Option[Int] = None,
   def join() {
     unfilteredServer.join()
   }
-}
-
-class HttpsServer(port: Int, host: String) extends Https(port, host) {
-  override lazy val keyStore: String = "certs/keystore-local.jks"
-  override lazy val keyStorePassword: String = "dummypass"
 }

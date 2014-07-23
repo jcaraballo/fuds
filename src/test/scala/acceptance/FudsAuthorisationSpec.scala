@@ -84,7 +84,7 @@ class FudsAuthorisationSpec extends Spec with BeforeAndAfterEach {
           c.getBytes(StandardCharsets.UTF_8)
         ))
       },
-      https = true,
+      keyStore = Some(("src/test/resources/certs/keystore-local.jks", "dummypass")),
       "target/files-" + java.util.UUID.randomUUID
     )
 }

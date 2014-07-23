@@ -33,7 +33,7 @@ class FudsHttpsSpec extends Spec with BeforeAndAfterEach {
       specifiedPort = None,
       contentWhiteList = None,
       uploadsWhiteList = None,
-      https = true,
+      keyStore = Some(("src/test/resources/certs/keystore-local.jks", "dummypass")),
       "target/files-" + java.util.UUID.randomUUID
     )
 

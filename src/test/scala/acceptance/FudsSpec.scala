@@ -74,7 +74,7 @@ class FudsSpec extends Spec with BeforeAndAfterEach {
     specifiedPort = None,
     contentWhiteList = Some(scala.io.Source.fromInputStream(new ByteArrayInputStream("IsCsv .*".getBytes(StandardCharsets.UTF_8)))),
     uploadsWhiteList = None,
-    https = false,
+    keyStore = None,
     filesDirectory
   )
 
