@@ -35,22 +35,19 @@ object Fuds {
     )
 
   case class Config(port: Option[Int],
-                    keyStoreLocation: Option[File],
-                    keyStorePassword: Option[String],
+                    keyStore: Option[(File, Option[String])],
                     filesDirectory: File,
                     contentWhiteList: Option[File],
                     uploadsWhiteList: Option[File]){
     def createFuds = {
-      val keyStore: Option[(File, String)] = (keyStoreLocation, keyStorePassword) match {
-        case (None, None) => None
-        case (Some(location), Some(password)) => Some((location, password))
-        case (None, Some(_)) => throw new IllegalArgumentException("Key store password provided, but not its location")
-        case (Some(location), None) =>
-          print("key store password: ")
-          val password = new String(System.console().readPassword())
-          Some((location, password))
+      def requestPasswordFromConsole(): String = {
+        print("key store password: ")
+        new String(System.console().readPassword())
       }
-      Fuds.createFromFiles(port, contentWhiteList, uploadsWhiteList, keyStore, filesDirectory.getPath)
+
+      val ksInclPassword = keyStore.map{(ks: (File, Option[String])) =>
+        (ks._1, ks._2.getOrElse(requestPasswordFromConsole()))}
+      Fuds.createFromFiles(port, contentWhiteList, uploadsWhiteList, ksInclPassword, filesDirectory.getPath)
     }
   }
 
@@ -58,8 +55,17 @@ object Fuds {
     head("fuds", "1.0")
 
     opt[Int]("port") action { (portNumber, c) => c.copy(port = Some(portNumber))}
-    opt[File]("key-store") valueName("<file>") action { (file, c) => c.copy(keyStoreLocation = Some(file))} text("Key store for HTTPS. Fuds will serve http by default, or https if --key-store is provided. If there's no --key-store-password the password will be requested from the console.")
-    opt[String]("key-store-password") valueName("<password>") action { (pw, c) => c.copy(keyStorePassword = Some(pw))} text("Password to access the store and the key (requires --key-store)")
+    opt[String]("https") valueName("<file>[:<password>]") action { (fileAndPassword: String, c: Config) =>
+      val separatorIndex: Int = fileAndPassword.indexOf(":")
+      if(separatorIndex == -1) {
+        val file = new File(fileAndPassword)
+        c.copy(keyStore = Some((file, None)))
+      } else {
+        val file = new File(fileAndPassword.substring(0, separatorIndex))
+        val password = fileAndPassword.substring(separatorIndex+1)
+        c.copy(keyStore = Some((file, Some(password))))
+      }
+    } text("Key store for HTTPS. Fuds will serve http by default, or https if --key-store is provided. If there's no --key-store-password the password will be requested from the console.")
     opt[File]("storage") valueName("<directory>") action { (file, c) => c.copy(filesDirectory = file)} text("Directory to store the uploaded files and to serve them for downloading.  (Default \"files/\".)")
     opt[File]("content-white-list") valueName("<file>") action { (file, c) => c.copy(contentWhiteList = Some(file))} text("White list restricting the content that can be uploaded. When no --content-white-list, any content can be uploaded. --content-white-list blank_file will reject all uploads.")
     opt[File]("uploads-white-list") valueName("<file>") action { (file, c) => c.copy(uploadsWhiteList = Some(file))} text("White list restricting which user:password credentials are allowed to upload files. When no --uploads-white-list, uploads do not require authentication. --uploads-white-list blank_file will reject all uploads.")
@@ -70,8 +76,7 @@ object Fuds {
   def main(args: Array[String]) {
     val defaultConfig = Config(
       port = Some(8080),
-      keyStoreLocation = None,
-      keyStorePassword = None,
+      keyStore = None,
       filesDirectory = new File("files/"),
       contentWhiteList = None,
       uploadsWhiteList = None
