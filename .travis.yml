@@ -2,5 +2,4 @@ language: scala
 scala:
 - 2.11.1
 script:
-- sbt assembly
-- ./smoke.bash
+- ./build.bash
