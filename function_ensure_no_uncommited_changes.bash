@@ -1,3 +1,4 @@
+#!/bin/bash
 
 function ensure_no_uncommited_changes(){
   git_status=$(git status --porcelain)
