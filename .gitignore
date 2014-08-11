@@ -16,7 +16,3 @@ project/plugins/project/
 .scala_dependencies
 .worksheet
 .idea
-
-# generated assembly configuration
-assembly-generated.sbt
-

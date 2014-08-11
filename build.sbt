@@ -1,6 +1,6 @@
 name := "fuds"
 
-version := "1.0"
+version := Option(System.getenv("FUDS_BUILD_NUMBER")).getOrElse("dev-local")
 
 scalaVersion := "2.11.1"
 
