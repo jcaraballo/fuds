@@ -34,7 +34,8 @@ class FudsHttpsSpec extends Spec with BeforeAndAfterEach {
       contentWhiteList = None,
       uploadsWhiteList = None,
       keyStore = Some(("src/test/resources/certs/keystore-local.jks", "dummypass")),
-      "target/files-" + java.util.UUID.randomUUID
+      "target/files-" + java.util.UUID.randomUUID,
+      shouldListDirectories = false
     )
 
     TrustAllSslCertificates

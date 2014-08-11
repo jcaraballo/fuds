@@ -70,16 +70,16 @@ class FudsSpec extends Spec with BeforeAndAfterEach {
     fuds = csvFuds(fudsDirectory)
   }
 
-  def csvFuds(filesDirectory: String): Server = Fuds.createFromBufferedSources(
+  private def csvFuds(filesDirectory: String): Server = Fuds.createFromBufferedSources(
     specifiedPort = None,
     contentWhiteList = Some(scala.io.Source.fromInputStream(new ByteArrayInputStream("IsCsv .*".getBytes(StandardCharsets.UTF_8)))),
     uploadsWhiteList = None,
     keyStore = None,
-    filesDirectory
+    filesDirectory,
+    shouldListDirectories = false
   )
 
-
-  def generateFudsDirectory(): String = {
+  private def generateFudsDirectory(): String = {
     "target/files-" + java.util.UUID.randomUUID
   }
 

@@ -7,9 +7,7 @@ import java.nio.{file => j7file}
 import unfiltered.request.Path
 import scala.util.control.NonFatal
 import fuds.restriction._
-import java.nio.file.NoSuchFileException
 import unfiltered.response.ResponseBytes
-import scala.Some
 import unfiltered.response.ResponseString
 import unfiltered.Cycle
 import org.eclipse.jetty.server.Response
@@ -19,7 +17,8 @@ class Server(val maybePort: Option[Int] = None,
              val contentWhiteList: ContentWhiteList,
              val uploadsWhiteList: AuthorisationWhiteList,
              val keyStore: Option[(String, String)],
-             val filesDirectory: String) {
+             val filesDirectory: String,
+             val shouldListDirectories: Boolean = true) {
   val port = maybePort.getOrElse(unfiltered.util.Port.any)
   var files = Map[String, Array[Byte]]()
   var unfilteredServer: unfiltered.jetty.Server = _
@@ -92,10 +91,14 @@ class Server(val maybePort: Option[Int] = None,
 
         case GET(Path(resourceLocator)) =>
           try {
-            ResponseBytes(j7file.Files.readAllBytes(partsToFullPath(relativeParts(resourceLocator))))
+            val urlPathParts: Vector[String] = relativeParts(resourceLocator)
+            val fullPath: j7file.Path = partsToFullPath(urlPathParts)
+            if (j7file.Files.isDirectory(fullPath)) {
+              if(shouldListDirectories) htmlListing(fullPath, urlPathParts) else NotFound
+            } else ResponseBytes(j7file.Files.readAllBytes(fullPath))
           }
           catch {
-            case _: NoSuchFileException => NotFound
+            case _: j7file.NoSuchFileException => NotFound
           }
       }}
     }
@@ -118,6 +121,32 @@ class Server(val maybePort: Option[Int] = None,
   private def partsToFullPath(parts: Vector[String]): j7file.Path = 
     j7file.Paths.get(baseDirectory + parts.mkString(java.io.File.separator))
   private def relativeParts(resourceLocator: String): Vector[String] = resourceLocator.dropWhile(_=='/').split("/").toVector
+
+  private def htmlListing(fullPath: j7file.Path, urlPathParts: Vector[String]) = {
+    val listing =
+      <html lang="en">
+        <head>
+          <meta charset="utf-8"/>
+          <title>title</title>
+        </head>
+        <body>
+          <table id="listing"> {
+            val directoryStream = j7file.Files.newDirectoryStream(fullPath)
+            try {
+              import scala.collection.convert.WrapAsScala.iterableAsScalaIterable
+              directoryStream.toSeq.sortBy{_.getFileName}.map{ p =>
+                <tr>
+                  <td><a href={"/" + urlPathParts.mkString("/") + "/" + p.getFileName.toString}>{p.getFileName.toString}</a></td>
+                </tr>
+              }
+            } finally {
+              directoryStream.close()
+            }
+          } </table>
+        </body>
+      </html>
+    Html5(listing)
+  }
 
   def stop() {
     unfilteredServer.stop()
