@@ -106,7 +106,7 @@ class Server(val maybePort: Option[Int] = None,
     unfilteredServer = keyStore match {
       case None => unfiltered.jetty.Http(port).filter(plan).start()
       case Some((location, password)) =>
-        new Https(port, "127.0.0.1"){
+        new Https(port, "0.0.0.0"){
           override lazy val keyStore: String = location
           override lazy val keyStorePassword: String = password
         }.filter(plan).start()
