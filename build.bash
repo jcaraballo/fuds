@@ -4,4 +4,9 @@
 
 cd "$( dirname "$0" )"
 
-./dist.bash && ./smoke.bash
+if [[ "$TRAVIS_PULL_REQUEST" == 'false' && "$TRAVIS_BRANCH" == 'master' ]] ; then
+  ./dist.bash && ./smoke.bash && ./publish.bash
+else
+  ./dist.bash && ./smoke.bash
+fi
+

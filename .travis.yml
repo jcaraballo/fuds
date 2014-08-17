@@ -3,3 +3,6 @@ scala:
 - 2.11.1
 script:
 - ./build.bash
+env:
+  global:
+    secure: Z+a0axpc6l7NHF6Rhyz7RN5juXSkq3IUUcdqrOHFPv0hJoNqwNsIMkVBfxElgyxzOxpgZZJh775sts1jFMobaC8x9iZrQBuRXNInFxf9ogdzanjlykwMJd+pH95D5P8S2QeBk4QpoDLPVde8NyoOyFvt55XXvsuafd55hkqVEUw=
