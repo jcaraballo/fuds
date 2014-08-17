@@ -15,6 +15,6 @@ fi
 
 target_url=https://37.187.23.147:9010/fuds/${version}/${artefact_filename}
 echo "Publishing fuds version ${version}: ${artefact_path} -> ${target_url}" >&2
-curl -s --fail -k3T ${artefact_path} --user $credentials $target_url >/dev/null || moan "Failed to publish ${artefact_path} to ${target_url}"
+curl -s --fail --cacert hallon-by-ip.cacert -3T ${artefact_path} --user $credentials $target_url >/dev/null || moan "Failed to publish ${artefact_path} to ${target_url}"
 
 echo Success >&2
