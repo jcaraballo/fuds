@@ -15,6 +15,6 @@ libraryDependencies ++= Seq(
   "net.databinder" %% "unfiltered-filter-async" % "0.8.0",
   "net.databinder" %% "unfiltered-jetty" % "0.8.0",
   "org.scalatest" % "scalatest_2.11" % "2.2.0" % "test",
-  "io.shaka" %% "naive-http" % "48" % "test",
+  "io.shaka" %% "naive-http" % "51" % "test",
   "com.github.scopt" %% "scopt" % "3.2.0"
 )
