@@ -14,7 +14,7 @@ Usage
 
 By default
 
-    $ java -jar fuds-dev-20140817160942-e1eb64c.jar
+    $ java -jar fuds.jar
     2014-08-17 17:34:14.350:INFO:oejs.Server:jetty-8.y.z-SNAPSHOT
     2014-08-17 17:34:14.414:INFO:oejs.AbstractConnector:Started SocketConnector@0.0.0.0:8080
     Server started on port 8080
@@ -31,7 +31,7 @@ and download it
 
 With some options, you can do HTTPS
 
-    $ java -jar fuds-dev-20140817160942-e1eb64c.jar --https keystore-local.jks:dummypass
+    $ java -jar fuds.jar --https keystore-local.jks:dummypass
     2014-08-17 17:38:38.758:INFO:oejs.Server:jetty-8.y.z-SNAPSHOT
     2014-08-17 17:38:39.013:INFO:oejus.SslContextFactory:Enabled Protocols [SSLv2Hello, SSLv3, TLSv1, TLSv1.1, TLSv1.2] of [SSLv2Hello, SSLv3, TLSv1, TLSv1.1, TLSv1.2]
     2014-08-17 17:38:39.033:INFO:oejs.AbstractConnector:Started $anon$1@0.0.0.0:8080
@@ -45,7 +45,7 @@ With some options, you can do HTTPS
 Or basic auth for uploads (should be combined with HTTPS)
 
     $ echo bob:secret >uploads_credentials
-    $ java -jar fuds-dev-20140817160942-e1eb64c.jar --https keystore-local.jks:dummypass --uploads-white-list uploads_credentials
+    $ java -jar fuds.jar --https keystore-local.jks:dummypass --uploads-white-list uploads_credentials
     [...]
 
     $ curl --cacert fuds-local.cacert --user bob:secret -3T foo https://localhost:8080/qux
@@ -54,7 +54,7 @@ Or basic auth for uploads (should be combined with HTTPS)
 
 And a couple of more things. There's a --help
 
-    $ $ java -jar fuds-dev-20140817160942-e1eb64c.jar --help
+    $ $ java -jar fuds.jar --help
     fuds 1.0
     Usage: fuds [options]
     
@@ -74,7 +74,5 @@ And a couple of more things. There's a --help
             Do not allow GETing urls that match a directory (see --list).
       --help
             Prints this usage text
-
-
 
 
