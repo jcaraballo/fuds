@@ -7,6 +7,11 @@ File Uploading and Downloading Service
 
 ... or poor man's [WebDav](http://en.wikipedia.org/wiki/WebDAV)
 
+Download the latest jar from https://hallon.org.uk:9010/fuds
+
+Usage
+-----
+
 By default
 
     $ java -jar fuds-dev-20140817160942-e1eb64c.jar
