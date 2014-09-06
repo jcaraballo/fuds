@@ -22,4 +22,6 @@ fi
 
 cmp ${temp}/storage/foo ${temp}/downloaded_foo || moan 'Comparison between original and downloaded foo failed'
 
-kill ${fuds_pid}
+kill ${fuds_pid} || moan "Failed to kill fuds with pid ${fuds_pid}"
+
+echo All good
