@@ -51,9 +51,11 @@ class Server(val maybePort: Option[Int] = None,
       def apply[A, B](intent: Cycle.Intent[A, B]) =
         Cycle.Intent[A, B] {
           case req =>
+            val startTime = System.currentTimeMillis()
             Cycle.Intent.complete(intent)(req) ~> new ResponseFunction[Any]() {
               override def apply[C <: Any](resp: HttpResponse[C]) = {
-                println(s"${req.remoteAddr} ${new Date()} ${req.method} ${req.uri} ${resp.underlying.asInstanceOf[Response].getStatus}")
+                val responseTime = System.currentTimeMillis() - startTime
+                println(s"${req.remoteAddr} ${new Date()} ${req.method} ${req.uri} ${resp.underlying.asInstanceOf[Response].getStatus} $responseTime")
                 resp
               }
             }
