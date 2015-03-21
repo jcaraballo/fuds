@@ -9,8 +9,7 @@ object WhiteListParser {
       val regex = line.substring(positionOfFirstSpace + 1).r
       new PathRegexContentWhiteList(regex, restriction)
     }
-    if(whiteLists.isEmpty) throw new IllegalArgumentException("Empty white list")
-    else CompoundContentWhiteList(whiteLists)
+    CompoundContentWhiteList(whiteLists)
   }
 }
 
