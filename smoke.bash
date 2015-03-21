@@ -34,6 +34,6 @@ cmp ${temp}/storage/foo ${temp}/downloaded_foo || show_logs_and_moan 'Comparison
 
 kill ${fuds_pid} || show_logs_and_moan "Failed to kill fuds with pid ${fuds_pid}"
 
-echo All good
-
 show_logs
+
+echo Smoke test: All good
