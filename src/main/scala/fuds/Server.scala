@@ -84,7 +84,7 @@ class Server(val maybePort: Option[Int] = None,
 
                 j7file.Files.write(partsToFullPath(parts), resourceContent)
 
-                ResponseString(canonicalResourceLocator)
+                Created ~> ResponseString(canonicalResourceLocator)
               } else Forbidden
             }
           } catch {

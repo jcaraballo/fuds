@@ -1,10 +1,10 @@
 package acceptance
 
+import acceptance.Helpers.{createdBody, okBody}
 import fuds.{Fuds, Server}
 import io.shaka.http.Http.http
 import io.shaka.http.Request.{GET, PUT}
-import io.shaka.http.Response
-import io.shaka.http.Status.{NOT_FOUND, OK}
+import io.shaka.http.Status.NOT_FOUND
 import org.scalatest.{BeforeAndAfterEach, Spec}
 
 import scala.xml.XML
@@ -15,9 +15,9 @@ class FudsDirectoryListingSpec extends Spec with BeforeAndAfterEach {
     def `list directory contents when set up to do so`() {
       fuds = createFuds(shouldListDirectories = true)
 
-      okBody(http(PUT(base + "/components/fear.csv").entity("booh")))
-      okBody(http(PUT(base + "/components/uncertainty.csv").entity("eeh?")))
-      okBody(http(PUT(base + "/components/doubt.csv").entity("could be")))
+      createdBody(http(PUT(base + "/components/fear.csv").entity("booh")))
+      createdBody(http(PUT(base + "/components/uncertainty.csv").entity("eeh?")))
+      createdBody(http(PUT(base + "/components/doubt.csv").entity("could be")))
 
       val response = http(GET(base + "/components/"))
       val page = XML.loadString(okBody(response).split("\n").drop(1).mkString("\n"))
@@ -37,8 +37,8 @@ class FudsDirectoryListingSpec extends Spec with BeforeAndAfterEach {
     def `include subdirectories in directory listing`(){
       fuds = createFuds(shouldListDirectories = true)
 
-      okBody(http(PUT(base + "/components/fear.csv").entity("booh")))
-      okBody(http(PUT(base + "/components/more/uncertainty.csv").entity("eeh?")))
+      createdBody(http(PUT(base + "/components/fear.csv").entity("booh")))
+      createdBody(http(PUT(base + "/components/more/uncertainty.csv").entity("eeh?")))
 
       val response = http(GET(base + "/components/"))
       val page = XML.loadString(okBody(response).split("\n").drop(1).mkString("\n"))
@@ -57,19 +57,13 @@ class FudsDirectoryListingSpec extends Spec with BeforeAndAfterEach {
     def `not list directory contents when set up to not list directory contents`() {
       fuds = createFuds(shouldListDirectories = false)
 
-      okBody(http(PUT(base + "/components/fear.csv").entity("booh")))
-      okBody(http(PUT(base + "/components/uncertainty.csv").entity("eeh?")))
-      okBody(http(PUT(base + "/components/doubt.csv").entity("could be")))
+      createdBody(http(PUT(base + "/components/fear.csv").entity("booh")))
+      createdBody(http(PUT(base + "/components/uncertainty.csv").entity("eeh?")))
+      createdBody(http(PUT(base + "/components/doubt.csv").entity("could be")))
 
       val response = http(GET(base + "/components/"))
       assert(response.status === NOT_FOUND)
     }
-  }
-
-  private def body(response: Response): Option[String] = response.entity.map(_.toString().trim)
-  private def okBody(response: Response): String = {
-    assert(response.status === OK)
-    response.entityAsString.trim
   }
 
   private def generateFudsDirectory(): String = {

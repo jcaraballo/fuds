@@ -1,17 +1,18 @@
 package acceptance
 
-import org.scalatest.{BeforeAndAfterEach, Spec}
-import fuds.{Server, Fuds}
-import io.shaka.http.Request.{PUT, GET}
-import io.shaka.http.{TrustAllSslCertificates, Response}
-import io.shaka.http.Status.{UNAUTHORIZED, OK}
-import io.shaka.http.Http.http
-import io.shaka.http.HttpHeader.AUTHORIZATION
-import scala.Some
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
+
+import acceptance.FudsAuthorisationSpec.PimpedRequest
+import acceptance.Helpers.{body, createdBody}
+import fuds.{Fuds, Server}
+import io.shaka.http.Http.http
+import io.shaka.http.HttpHeader.AUTHORIZATION
+import io.shaka.http.Request.{GET, PUT}
+import io.shaka.http.Status.{CREATED, OK, UNAUTHORIZED}
+import io.shaka.http.{Response, TrustAllSslCertificates}
+import org.scalatest.{BeforeAndAfterEach, Spec}
 import sun.misc.BASE64Encoder
-import FudsAuthorisationSpec.PimpedRequest
 
 class FudsAuthorisationSpec extends Spec with BeforeAndAfterEach {
   TrustAllSslCertificates
@@ -27,7 +28,7 @@ class FudsAuthorisationSpec extends Spec with BeforeAndAfterEach {
             .basicAuth("user", "password")
             .entity("foo,bar\n1,2\n")
         )
-        assert((response.status, body(response)) ===(OK, Some("/fear.csv")))
+        assert((response.status, body(response)) ===(CREATED, Some("/fear.csv")))
 
         assert(http(
           PUT(base + "/fear.csv")
@@ -50,7 +51,7 @@ class FudsAuthorisationSpec extends Spec with BeforeAndAfterEach {
       val base = s"https://localhost:${fuds.port}"
       try {
         val response: Response = http(PUT(base + "/fear.csv").entity("foo,bar\n1,2\n"))
-        assert((response.status, body(response)) ===(OK, Some("/fear.csv")))
+        assert((response.status, body(response)) ===(CREATED, Some("/fear.csv")))
       }
       finally fuds.stop()
     }
@@ -60,7 +61,7 @@ class FudsAuthorisationSpec extends Spec with BeforeAndAfterEach {
 
       val base = s"https://localhost:${fuds.port}"
       try {
-        okBody(http(PUT(base + "/files/fear.csv").basicAuth("user", "password").entity("foo,bar\n1,2\n")))
+        createdBody(http(PUT(base + "/files/fear.csv").basicAuth("user", "password").entity("foo,bar\n1,2\n")))
 
         val response = http(GET(base + "/files/fear.csv"))
         assert((response.status, body(response)) === (OK, Some("foo,bar\n1,2")))
@@ -68,12 +69,6 @@ class FudsAuthorisationSpec extends Spec with BeforeAndAfterEach {
       finally fuds.stop()
     }
   }
-
-  private def okBody(response: Response): String = {
-    assert(response.status === OK)
-    response.entityAsString.trim
-  }
-  private def body(response: Response): Option[String] = response.entity.map(_.toString().trim)
 
   private def fudsForUploadWhiteList(uploadsWhiteListFileContent: Option[String]): Server =
     Fuds.createFromBufferedSources(

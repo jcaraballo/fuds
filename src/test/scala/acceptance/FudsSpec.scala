@@ -1,32 +1,33 @@
 package acceptance
 
-import org.scalatest.{BeforeAndAfterEach, Spec}
-import fuds.{Fuds, Server}
-import io.shaka.http.Http.http
-import io.shaka.http.Request.{PUT,GET}
-import io.shaka.http.Response
-import io.shaka.http.Status.{FORBIDDEN, NOT_FOUND, OK, BAD_REQUEST}
-import fuds.restriction.{PathRegexContentWhiteList, IsCsv}
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
+
+import acceptance.Helpers.{body, createdBody}
+import fuds.{Fuds, Server}
+import io.shaka.http.Http.http
+import io.shaka.http.Request.{GET, PUT}
+import io.shaka.http.Response
+import io.shaka.http.Status._
+import org.scalatest.{BeforeAndAfterEach, Spec}
 
 class FudsSpec extends Spec with BeforeAndAfterEach {
 
   object `Server must` {
     def `enable users to upload files`() {
       val response: Response = http(PUT(base + "/fear.csv").entity("foo,bar\n1,2\n"))
-      assert((response.status, body(response)) === (OK, Some("/fear.csv")))
+      assert((response.status, body(response)) === (CREATED, Some("/fear.csv")))
     }
 
     def `enable users to retrieve files previously uploaded`() {
-      assert(okBody(http(PUT(base + "/fear.csv").entity("foo,bar\n1,2\n"))) === "/fear.csv")
+      assert(createdBody(http(PUT(base + "/fear.csv").entity("foo,bar\n1,2\n"))) === "/fear.csv")
       
       val response = http(GET(base + "/fear.csv"))
       assert((response.status, body(response)) === (OK, Some("foo,bar\n1,2")))
     }
 
     def `enable users to retrieve files previously uploaded even if the server has been down in between`() {
-      assert(okBody(http(PUT(base + "/fear.csv").entity("foo,bar\n1,2\n"))) === "/fear.csv")
+      assert(createdBody(http(PUT(base + "/fear.csv").entity("foo,bar\n1,2\n"))) === "/fear.csv")
 
       fuds.stop()
       fuds = csvFuds(fudsDirectory)
@@ -36,7 +37,7 @@ class FudsSpec extends Spec with BeforeAndAfterEach {
     }
 
     def `allow locators of more than one path part`() {
-      assert(okBody(http(PUT(base + "/fear/uncertainty/doubt.csv").entity("foo,bar\n1,2\n"))) === "/fear/uncertainty/doubt.csv")
+      assert(createdBody(http(PUT(base + "/fear/uncertainty/doubt.csv").entity("foo,bar\n1,2\n"))) === "/fear/uncertainty/doubt.csv")
 
       val response = http(GET(base + "/fear/uncertainty/doubt.csv"))
       assert((response.status, body(response)) === (OK, Some("foo,bar\n1,2")))
@@ -57,12 +58,6 @@ class FudsSpec extends Spec with BeforeAndAfterEach {
     def `restrict uploads to proper csvs where configured that way`(){
       assert(http(PUT(base + "/fear.csv").entity("foo\n1,2\n")).status === FORBIDDEN)
    }
-  }
-
-  private def body(response: Response): Option[String] = response.entity.map(_.toString().trim)
-  private def okBody(response: Response): String = {
-    assert(response.status === OK)
-    response.entityAsString.trim
   }
 
   override def beforeEach(){
