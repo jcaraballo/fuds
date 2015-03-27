@@ -96,7 +96,7 @@ object Fuds {
       explicitlyList = false,
       explicitlyNoList = false
     )
-    Parser.parse(args, defaultConfig).map(_.createFuds.join())
+    Parser.parse(args, defaultConfig).foreach(_.createFuds.join())
     System.exit(1)
   }
 }
