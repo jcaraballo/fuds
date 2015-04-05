@@ -3,6 +3,7 @@ package acceptance
 import acceptance.Helpers.{createdBody, okBody}
 import fuds.{Fuds, Server}
 import io.shaka.http.Http.http
+import io.shaka.http.HttpHeader.CONTENT_TYPE
 import io.shaka.http.Request.{GET, PUT}
 import io.shaka.http.Status.NOT_FOUND
 import org.scalatest.{BeforeAndAfterEach, Spec}
@@ -20,6 +21,7 @@ class FudsDirectoryListingSpec extends Spec with BeforeAndAfterEach {
       createdBody(http(PUT(base + "/components/doubt.csv").entity("could be")))
 
       val response = http(GET(base + "/components/"))
+      assert(response.headers(CONTENT_TYPE) === List("text/html;charset=UTF-8"))
       val page = XML.loadString(okBody(response).split("\n").drop(1).mkString("\n"))
 
       assert((page \\ "table" \ "tr" \ "td" \ "a").map{link =>
